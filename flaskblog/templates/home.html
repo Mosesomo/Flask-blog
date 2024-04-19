@@ -12,7 +12,7 @@
             <a class="mr-2" href="{{ url_for('user_post', username=post.author.username) }}">{{ post.author.username }}</a>
             <small class="text-muted"><span class="text-dark">Date Posted:</span> {{ post.date_posted.strftime('%d-%m-%Y') }}</small>
           </div>
-          <h2><a class="article-title text-decoration-none mb-1" href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></h2>
+          <h2><a class="article-title text-decoration-none mb-0" href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></h2>
           <p class="article-content">
             {% set too_long_threshold = 300 %}
             {% if post.content|length > too_long_threshold %}
