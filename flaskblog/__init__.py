@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import os
-from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_uploads import UploadSet, IMAGES, configure_uploads
@@ -11,9 +10,8 @@ from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
 
-load_dotenv()
 
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['SECRET_KEY'] = 'a4f0cef24a92f512'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///storage.db'
 app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
 app.config['MAIL_PORT'] = 587
