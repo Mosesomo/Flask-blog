@@ -1,9 +1,7 @@
 #!/usr/bin/python3
-import secrets
 import os
-from PIL import Image
-from flask import render_template, url_for, flash, redirect, request, abort
-from flaskblog import app, db, bcrypt, mail
+from flask import render_template, url_for, flash, redirect, request, abort, send_from_directory
+from flaskblog import app, db, bcrypt, mail, photos, serial
 from flaskblog.models import User, Post
 from flaskblog.form import Registration, LoginForm, PostContent, UpdateAccount, RequestResetForm, ResetPasswordForm
 from flask_login import login_user, current_user, logout_user, login_required
@@ -67,41 +65,29 @@ def logout():
     return redirect(url_for('home'))
 
 
-def save_picture(file_picture):
-    random_hex = secrets.token_hex(8)
-    _, f_ext = os.path.splitext(file_picture.filename)
-    picture_fn = random_hex + f_ext
-    picture_path = os.path.join(app.root_path,
-                                'static/profile', picture_fn)
-    size = (125, 125)
-    i = Image.open(file_picture)
-    i.thumbnail(size)
-    i.save(picture_path)
-
-    return picture_fn
-
-
 @app.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
     form = UpdateAccount()
     if form.validate_on_submit():
         if form.picture.data:
-            picture_file = save_picture(form.picture.data)
-            current_user.image_file = picture_file
+            picture_file = photos.save(form.picture.data)
+            filename_url = url_for('upload_photo', filename=picture_file)
         current_user.username = form.username.data
         current_user.email = form.email.data
+        current_user.image = filename_url
         db.session.commit()
         flash('Account updated successfully!', 'success')
         return redirect(url_for('account'))
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.email.data = current_user.email
-    image_file = url_for('static',
-                         filename='profile/' + current_user.image)
     return render_template('account.html', title='Account',
-                           image_file=image_file, form=form)
+                           form=form)
 
+@app.route('/uploads/photos/<filename>')
+def upload_photo(filename):
+    return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'], filename)
 
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
@@ -169,20 +155,15 @@ def user_post(username):
     return render_template('user_post.html', posts=posts, user=user)
 
 
-def send_reset_email(user):
-    with app.app_context():
-        token = user.get_reset_token()
-    msg = Message('Password Reset Request',
-                  sender='noreply@demo.com',
-                  recipients=[user.email])
-    msg.body = f'''To reset your password, visit the following
-link: {url_for('request_token', token=token, _external=True)}
+def generate_reset_token(email):
+    return serial.dumps(email, salt='password-reset')
 
-If you did not make this rquest then simply ignore\
-        this email and no change will be applied
-'''
+def send_reset_email(email, reset_link):
+    msg = Message('Reset Password Link', sender='noreply@mosesomo.tech', recipients=[email])
+    msg.body = f'Please click the following link to reset your password: {reset_link}'
     mail.send(msg)
-
+    token = serial.dumps(email, salt='password-reset')
+    return token
 
 @app.route("/reset_password", methods=['GET', 'POST'])
 def request_reset():
@@ -191,13 +172,14 @@ def request_reset():
     form = RequestResetForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        send_reset_email(user)
-        flash('An email has been sent with\
-            instruction to\
-                reset your password', 'info')
-    return render_template('reset_request.html',
-                           title='Reset assword', form=form)
-
+        if user:
+            token = generate_reset_token(user.email)
+            reset_link = url_for('request_token', token=token, _external=True)
+            send_reset_email(user.email, reset_link)
+            flash('An email has been sent with instructions to reset your password', 'info')
+        else:
+            flash('Email not found', 'warning')
+    return render_template('reset_request.html', title='Reset Password', form=form)
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def request_token(token):
@@ -209,12 +191,9 @@ def request_token(token):
         return redirect(url_for('request_reset'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        hashed_password = (bcrypt.generate_password_hash
-                           (form.password.data)
-                           .decode('utf-8'))
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user.password = hashed_password
         db.session.commit()
-        flash('Your password has the updated successfully!', 'success')
+        flash('Your password has been updated successfully!', 'success')
         return redirect(url_for('login'))
-    return render_template('reset_password.html',
-                           title='Reset Password', form=form)
+    return render_template('reset_password.html', title='Reset Password', form=form)

@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from flaskblog import photos
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, BooleanField, PasswordField, TextAreaField
@@ -30,6 +31,15 @@ class Registration(FlaskForm):
         email = User.query.filter_by(email=email.data).first()
         if email:
             raise ValidationError('Email already exists!')
+    
+    def validate_password(self, password_field):
+        password = password_field.data
+        # Check if password contains at least one uppercase letter, one lowercase letter, and one digit
+        if (not any(c.isupper() for c in password)
+            or not any(c.islower() for c in password)
+            or not any(c.isdigit() for c in password)):
+            raise ValidationError('Password must contain at least\
+                one uppercase letter, one lowercase letter, and one digit.')
 
 
 class LoginForm(FlaskForm):
@@ -47,7 +57,7 @@ class UpdateAccount(FlaskForm):
     email = StringField('Email',
                         validators=[DataRequired(), Email()])
     picture = FileField('Update profile picture',
-                        validators=[FileAllowed(['jpg', 'png'])])
+                        validators=[FileAllowed(photos, 'Images only')])
     submit = SubmitField('Update')
 
     def validate_username(self, username):
