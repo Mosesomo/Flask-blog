@@ -72,10 +72,6 @@ body {
     font-weight: 500;
     padding: 10px 20px;
 }
-  .media{
-    width: 100%;
-    display: flex;
-  }
   .media-body{
     width: 100%;
   }
@@ -94,8 +90,7 @@ body {
   }
   
   .article-content {
-    white-space: pre-line;
-    font-weight: 500;
+    font-weight: 400;
 
   }
   

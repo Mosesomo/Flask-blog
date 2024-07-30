@@ -2,29 +2,34 @@
 {% block content %}
  {% for post in posts.items %}
     <article class="media content-section">
-      {% if post.author.image.startswith('profile/') %}
-        <img class="rounded-circle article-img" src="{{ url_for('static', filename=post.author.image) }}">
-      {% else %}
-       <img class="rounded-circle article-img" style="object-fit: cover;" src="{{ post.author.image }}">
-      {% endif %}
-        <div class="media-body"> 
-          <div class="article-metadata">
-            <a class="mr-2" href="{{ url_for('user_post', username=post.author.username) }}">{{ post.author.username }}</a>
-            <small class="text-muted"><span class="text-dark">Date Posted:</span> {{ post.date_posted.strftime('%d-%m-%Y') }}</small>
-          </div>
-          <h2><a class="article-title text-decoration-none mb-0" href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></h2>
-          <p class="article-content">
-            {% set too_long_threshold = 300 %}
-            {% if post.content|length > too_long_threshold %}
-              <span class="truncated-content">{{ post.content[:too_long_threshold] }}</span>
-              <span class="full-content" style="display: none;">{{ post.content }}</span>
-              <a href="#" class="toggle-content text-decoration-none" data-full-content="{{ post.content }}">Read More....</a>
-            {% else %}
-              {{ post.content }}
-            {% endif %}
-          </p>
+      <div class='d-flex gap-2 mb-3 align-center'>
+        {% if post.author.image.startswith('profile/') %}
+          <img class="rounded-circle article-img" src="{{ url_for('static', filename=post.author.image) }}">
+        {% else %}
+        <img class="rounded-circle article-img" style="object-fit: cover;" src="{{ post.author.image }}">
+        {% endif %}
+        <div class="article-metadata">
+          <a class="mr-2" href="{{ url_for('user_post', username=post.author.username) }}">{{ post.author.username }}</a>
+          <small class="text-muted"><span class="text-dark">Date Posted:</span> {{ post.date_posted.strftime('%d-%m-%Y') }}</small>
         </div>
-      </article>
+      </div>
+      <div class="media-body"> 
+        <h2><a class="article-title text-decoration-none mb-0" href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></h2>
+        <p class="article-content">
+          {#
+          {% set too_long_threshold = 400 %}
+          {% if post.content|length > too_long_threshold %}
+            <span class="truncated-content">{{ post.content[:too_long_threshold]|safe }}</span>
+            <span class="full-content" style="display: none;">{{ post.content|safe }}</span>
+            <a href="#" class="toggle-content text-decoration-none" data-full-content="{{ post.content }}">Read More....</a>
+          {% else %}
+              
+          {% endif %}
+          #}
+          {{ post.content|safe }}
+        </p>
+      </div>
+    </article>
     {% endfor %}
     {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
       {% if page_num %}

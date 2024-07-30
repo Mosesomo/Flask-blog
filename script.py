@@ -5,9 +5,9 @@ from flaskblog.models import User, Post
 with app.app_context():
     db.create_all()
     
-    user2 = User.query.get(2)
+    """user2 = User.query.get(2)
     user2.image = 'profile/image.jpg'
-    db.session.commit()
+    db.session.commit()"""
     
     users = User.query.all()
     for user in users:

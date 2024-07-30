@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(100), unique=True, nullable=False)
     image = db.Column(db.String(20), nullable=False, default='image.jpg')
     password = db.Column(db.String(20), nullable=False)
+    google_id = db.Column(db.String(30), unique=True, nullable=True)
     posts = db.relationship('Post', backref='author', lazy=True)
 
     @staticmethod

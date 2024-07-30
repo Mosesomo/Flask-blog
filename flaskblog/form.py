@@ -6,6 +6,7 @@ from wtforms import StringField, SubmitField, BooleanField, PasswordField, TextA
 from wtforms.validators import DataRequired, Length, EqualTo, Email, ValidationError
 from flaskblog.models import User, Post
 from flask_login import current_user
+from flask_ckeditor import CKEditorField
 
 
 class Registration(FlaskForm):
@@ -77,7 +78,7 @@ class UpdateAccount(FlaskForm):
 
 class PostContent(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
-    content = TextAreaField('Content', validators=[DataRequired()])
+    content = CKEditorField('Content', validators=[DataRequired()])
     submit = SubmitField('Post')
 
 

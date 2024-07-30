@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 import os
 from flask import render_template, url_for, flash, redirect, request, abort, send_from_directory
-from flaskblog import app, db, bcrypt, mail, photos, serial
+from flaskblog import app, db, bcrypt, mail, photos, serial, oauth
 from flaskblog.models import User, Post
 from flaskblog.form import Registration, LoginForm, PostContent, UpdateAccount, RequestResetForm, ResetPasswordForm
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
+from authlib.integrations.flask_client import OAuth
 
 
 @app.route('/')
@@ -57,6 +58,63 @@ def login():
             flash('Login Unsuccessful. Please check username and password',
                   'danger')
     return render_template('login.html', title='Login', form=form)
+
+@app.route('/google/')
+def google():
+    # Google OAuth configuration
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+    
+    CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
+    oauth.register(
+        name='google',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url=CONF_URL,
+        client_kwargs={
+            'scope': 'openid email profile',
+            'nonce': 'some_nonce_value'
+        }
+    )
+    
+    redirect_uri = url_for('google_auth', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@app.route('/google/auth/')
+def google_auth():
+    try:
+        token = oauth.google.authorize_access_token()
+        print("Token:", token)
+        
+        # Manually inspect the token
+        user_info = oauth.google.parse_id_token(token, None)
+        print("User Info:", user_info)
+        
+        google_id = user_info.get('sub')
+        email = user_info.get('email')
+        username = user_info.get('name', email.split('@')[0])
+        picture = user_info.get('picture', 'default.jpg')
+        password = user_info.get('at_hash')
+
+        user = User.query.filter_by(google_id=google_id).first()
+        if user is None:
+            user = User.query.filter_by(email=email).first()
+            if user:
+                flash('Email address already in use. Please log in using your credentials.', 'danger')
+                return redirect(url_for('login'))
+            
+            user = User(google_id=google_id, username=username, email=email, password=password, image=picture)
+            db.session.add(user)
+            db.session.commit()
+        
+        login_user(user)
+        flash('You have been logged in!', 'success')
+        return redirect(url_for('home'))
+    
+    except Exception as e:
+        print(f"Error during authentication: {e}")
+        flash('Authentication failed. Please try again.', 'danger')
+        return redirect(url_for('login'))
 
 
 @app.route('/logout')
