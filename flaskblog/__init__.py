@@ -16,7 +16,7 @@ app = Flask(__name__)
 load_dotenv()
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SERVER_NAME'] = 'localhost:5001'
+app.config['SERVER_NAME'] = os.environ.get('SERVER_NAME')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///storage.db'
 app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
 app.config['MAIL_PORT'] = 587
