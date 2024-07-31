@@ -84,11 +84,11 @@ def google():
 def google_auth():
     try:
         token = oauth.google.authorize_access_token()
-        print("Token:", token)
+        # print("Token:", token)
         
         # Manually inspect the token
         user_info = oauth.google.parse_id_token(token, None)
-        print("User Info:", user_info)
+        # print("User Info:", user_info)
         
         google_id = user_info.get('sub')
         email = user_info.get('email')

@@ -9,12 +9,13 @@ from flask_mail import Mail
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
 from flask_ckeditor import CKEditor
+from dotenv import load_dotenv
 
 
 app = Flask(__name__)
+load_dotenv()
 
-
-app.config['SECRET_KEY'] = 'a4f0cef24a92f512'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SERVER_NAME'] = 'localhost:5001'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///storage.db'
 app.config['MAIL_SERVER']='live.smtp.mailtrap.io'

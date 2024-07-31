@@ -14,3 +14,7 @@ Flask-Reuploaded==1.4.0
 Flask-Mail==0.9.1
 email-validator== 2.1.1
 gunicorn== 22.0.0
+python-dotenv
+flask_ckeditor
+authlib
+
