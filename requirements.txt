@@ -18,3 +18,5 @@ python-dotenv
 flask_ckeditor
 authlib
 requests
+bleach
+Flask-Migrate
