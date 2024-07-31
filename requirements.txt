@@ -17,4 +17,4 @@ gunicorn== 22.0.0
 python-dotenv
 flask_ckeditor
 authlib
-
+requests
