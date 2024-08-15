@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import os
-from flask import render_template, url_for, flash, redirect, request, abort, send_from_directory
-from flaskblog import app, db, bcrypt, mail, photos, serial, oauth
+from flask import render_template, url_for, flash, redirect, request, abort, send_from_directory, jsonify
+from flaskblog import app, db, bcrypt, mail, photos, serial, oauth, videos
 from flaskblog.models import User, Post
 from flaskblog.form import Registration, LoginForm, PostContent, UpdateAccount, RequestResetForm, ResetPasswordForm
 from flask_login import login_user, current_user, logout_user, login_required
@@ -147,6 +147,10 @@ def account():
 def upload_photo(filename):
     return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'], filename)
 
+@app.route('/uploads/videos/<filename>')
+def uploaded_video(filename):
+    return send_from_directory(app.config['UPLOADED_VIDEOS_DEST'], filename)
+
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def new_post():
@@ -212,6 +216,49 @@ def user_post(username):
         .paginate(page=page, per_page=per_page)
     return render_template('user_post.html', posts=posts, user=user)
 
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'upload' in request.files:
+        file = request.files['upload']
+        
+        # Save image
+        if file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            filename = photos.save(file)
+            url = url_for('uploaded_photo', filename=filename, _external=True)
+        elif file.filename.lower().endswith(('.mp4', '.webm', '.ogg')):
+            filename = videos.save(file)
+            url = url_for('uploaded_video', filename=filename, _external=True)
+        
+        # Unsupported file type
+        else:
+            return jsonify({"error": "Invalid file format"}), 400
+
+        return jsonify({
+            "uploaded": 1,
+            "fileName": filename,
+            "url": url
+        })
+    return jsonify({"error": "No file uploaded"}), 400
+
+
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'upload' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['upload']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        # Return a JSON response with the URL of the uploaded file
+        url = url_for('uploaded_file', filename=filename, _external=True)
+        return jsonify({'url': url}), 200
 
 def generate_reset_token(email):
     return serial.dumps(email, salt='password-reset')

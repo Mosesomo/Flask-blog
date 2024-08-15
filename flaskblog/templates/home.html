@@ -13,7 +13,7 @@
           <small class="text-muted"><span class="text-dark">Date Posted:</span> {{ post.date_posted.strftime('%d-%m-%Y') }}</small>
         </div>
       </div>
-      <div class="media-body"> 
+      <div class="media-body">
         <h2><a class="article-title text-decoration-none mb-0" href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></h2>
         <p class="article-content">
           {#
