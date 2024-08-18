@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from flaskblog import photos
+from flaskblog import photos, videos
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, BooleanField, PasswordField, TextAreaField
@@ -7,7 +7,15 @@ from wtforms.validators import DataRequired, Length, EqualTo, Email, ValidationE
 from flaskblog.models import User, Post
 from flask_login import current_user
 from flask_ckeditor import CKEditorField
+from flask_uploads import UploadSet, IMAGES
 
+
+photos = UploadSet('photos', IMAGES)
+# Define allowed video extensions
+VIDEOS = ('mp4', 'mov', 'avi', 'mkv', 'webm')
+
+# Combine the allowed extensions for both images and videos
+allowed_extensions = IMAGES + VIDEOS
 
 class Registration(FlaskForm):
     username = StringField('Username',
@@ -79,6 +87,7 @@ class UpdateAccount(FlaskForm):
 class PostContent(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     content = CKEditorField('Content', validators=[DataRequired()])
+    media = FileField('Upload Media', validators=[FileAllowed(allowed_extensions, 'Images and Videos only!')])
     submit = SubmitField('Post')
 
 

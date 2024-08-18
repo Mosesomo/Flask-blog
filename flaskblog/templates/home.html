@@ -1,45 +1,52 @@
 {% extends "layout.html" %}
 {% block content %}
- {% for post in posts.items %}
+ {% for truncated_post in truncated_posts %}
     <article class="media content-section">
       <div class='d-flex gap-2 mb-3 align-center'>
-        {% if post.author.image.startswith('profile/') %}
-          <img class="rounded-circle article-img" src="{{ url_for('static', filename=post.author.image) }}">
+        {% if truncated_post.post.author.image.startswith('profile/') %}
+          <img class="rounded-circle article-img" src="{{ url_for('static', filename=truncated_post.post.author.image) }}">
         {% else %}
-        <img class="rounded-circle article-img" style="object-fit: cover;" src="{{ post.author.image }}">
+          <img class="rounded-circle article-img" style="object-fit: cover;" src="{{ truncated_post.post.author.image }}">
         {% endif %}
         <div class="article-metadata">
-          <a class="mr-2" href="{{ url_for('user_post', username=post.author.username) }}">{{ post.author.username }}</a>
-          <small class="text-muted"><span class="text-dark">Date Posted:</span> {{ post.date_posted.strftime('%d-%m-%Y') }}</small>
+          <a class="mr-2" href="{{ url_for('user_post', username=truncated_post.post.author.username) }}">{{ truncated_post.post.author.username }}</a>
+          <small class="text-muted"><span class="text-dark">Date Posted:</span> {{ truncated_post.post.date_posted.strftime('%d-%m-%Y') }}</small>
         </div>
       </div>
       <div class="media-body">
-        <h2><a class="article-title text-decoration-none mb-0" href="{{ url_for('post', post_id=post.id) }}">{{ post.title }}</a></h2>
-        <p class="article-content">
-          {#
-          {% set too_long_threshold = 400 %}
-          {% if post.content|length > too_long_threshold %}
-            <span class="truncated-content">{{ post.content[:too_long_threshold]|safe }}</span>
-            <span class="full-content" style="display: none;">{{ post.content|safe }}</span>
-            <a href="#" class="toggle-content text-decoration-none" data-full-content="{{ post.content }}">Read More....</a>
+        <h2>
+          <a class="article-title text-decoration-none mb-0" href="{{ url_for('post', post_id=truncated_post.post.id) }}">
+            {{ truncated_post.post.title }}
+          </a>
+        </h2>
+        {% if truncated_post.post.media %}
+          {% if truncated_post.post.media.endswith('.mp4') or truncated_post.post.media.endswith('.webm') or truncated_post.post.media.endswith('.ogg') %}
+              <video controls autoplay loop muted>
+                  <source src="{{ truncated_post.post.media }}" type="video/mp4">
+              </video>
           {% else %}
-              
+              <img src="{{ truncated_post.post.media }}" alt="Post media">
           {% endif %}
-          #}
-          {{ post.content|safe }}
-        </p>
-      </div>
+        {% endif %}
+        <div class="article-content">
+          {{ truncated_post.truncated_content | safe }}
+          {% if truncated_post.truncated_content | length < truncated_post.post.content | length %}
+              <a href="{{ url_for('post', post_id=truncated_post.post.id) }}">Read More</a>
+          {% endif %}
+        </div>
+      </div>      
     </article>
-    {% endfor %}
-    {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-      {% if page_num %}
+ {% endfor %}
+ 
+ {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+    {% if page_num %}
         {% if posts.page == page_num %}
           <a class="btn btn-info mb-4 text-center" href="{{ url_for('home', page=page_num) }}">{{ page_num }}</a>
         {% else %}
-            <a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=page_num) }}">{{ page_num }}</a>
+          <a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=page_num) }}">{{ page_num }}</a>
         {% endif %}
-      {% else %}
+    {% else %}
         ...
-      {% endif %}
-    {% endfor %}
+    {% endif %}
+ {% endfor %}
 {% endblock content %}

@@ -7,6 +7,7 @@ from flaskblog.form import Registration, LoginForm, PostContent, UpdateAccount, 
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 from authlib.integrations.flask_client import OAuth
+from bs4 import BeautifulSoup
 
 
 @app.route('/')
@@ -16,7 +17,14 @@ def home():
     per_page = 2
     posts = Post.query.order_by(Post.date_posted.desc()).\
         paginate(page=page, per_page=per_page)
-    return render_template('home.html', posts=posts)
+    truncated_posts = []
+    for post in posts.items:
+        truncated_content = truncate_html(post.content, max_length=100)
+        truncated_posts.append({
+            'post': post,
+            'truncated_content': truncated_content
+        })
+    return render_template('home.html', posts=posts, truncated_posts=truncated_posts)
 
 
 @app.route('/about')
@@ -148,29 +156,76 @@ def upload_photo(filename):
     return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'], filename)
 
 @app.route('/uploads/videos/<filename>')
-def uploaded_video(filename):
+def upload_video(filename):
     return send_from_directory(app.config['UPLOADED_VIDEOS_DEST'], filename)
+
+
+def truncate_html(html, max_length):
+    """
+    Truncate the HTML content to a certain number of characters,
+    preserving the HTML structure and excluding images.
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+    text = ''
+    truncated = False
+
+    for element in soup.recursiveChildGenerator():
+        if isinstance(element, str):
+            if len(text) + len(element) > max_length:
+                text += element[:max_length - len(text)]
+                truncated = True
+                break
+            text += element
+        elif element.name in ['p', 'br', 'div']:
+            text += ' '
+        elif element.name == 'img':
+            # Include the image tag in the truncated content
+            text += str(element)
+            continue  # Skip further processing for this image
+        if len(text) >= max_length:
+            truncated = True
+            break
+
+    # Return the truncated content with an ellipsis if truncated
+    if truncated:
+        return text.strip() + '...'
+    return str(soup)  # Return the original content if not truncated
 
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def new_post():
     form = PostContent()
     if form.validate_on_submit():
-        post = Post(title=form.title.data,
-                    content=form.content.data,
-                    author=current_user)
+        filename_url = None
+        if form.media.data:
+            filename = form.media.data.filename
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                filename = photos.save(form.media.data)
+                filename_url = url_for('upload_photo', filename=filename)
+            elif filename.lower().endswith(('.mp4', '.webm', '.ogg')):
+                filename = videos.save(form.media.data)
+                filename_url = url_for('upload_video', filename=filename)
+        
+        post = Post(
+            title=form.title.data,
+            content=form.content.data,
+            media=filename_url,
+            author=current_user
+        )
         db.session.add(post)
         db.session.commit()
         flash("Post created successfully", 'success')
         return redirect(url_for('home'))
-    return render_template('post.html', title='New Post',
-                           form=form, legend='New post')
+    
+    return render_template('post.html', title='New Post', form=form, legend='New post')
 
 
 @app.route('/post/<int:post_id>')
 def post(post_id):
     post = Post.query.get_or_404(post_id)
-    return render_template('create_post.html', title=post.title, post=post)
+    truncated_content = truncate_html(post.content, max_length=300)
+    return render_template('create_post.html', title=post.title,
+                           post=post, truncated_content=truncated_content)
 
 
 @app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])

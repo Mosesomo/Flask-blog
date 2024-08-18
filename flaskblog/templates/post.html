@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="content-section">
-    <form method="POST" action="">
+<div class="media content-section">
+    <form method="POST" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         <fieldset class="form-group">
             <legend class="border-bottom mb-4">{{ legend }}</legend>
@@ -31,6 +31,10 @@
                     {{ form.content(class="form-control form-control-lg") }}
                 {% endif %}
             </div>
+            <div class="form-group">
+                {{ form.media.label() }}
+                {{ form.media(class="form-control-file") }}
+            </div>
         </fieldset>
         <div class="rearrange">
             <div class="form-group">
@@ -39,18 +43,6 @@
         </div>
     </form>
     {{ ckeditor.load() }}
-    {{ ckeditor.config(name='content', filebrowserUploadUrl=url_for('upload_image', _external=True)) }}
+    {{ ckeditor.config(name='content') }}
 </div>
 {% endblock content %}
-
-{% block scripts %}
-<script>
-    CKEDITOR.replace('content', {
-        filebrowserUploadUrl: '{{ url_for('upload_image', _external=True) }}',
-        filebrowserImageUploadUrl: '{{ url_for('upload_image', _external=True) }}',
-        contentsCss: '/static/css/ckeditor.css', // Custom CSS for CKEditor content
-        removeButtons: 'Flash,Form,Checkbox,Radio,TextField,Textarea,Select,Button,Image',
-        extraAllowedContent: 'img[!src,alt,width,height];' // Allow specific content
-    });
-</script>
-{% endblock scripts %}
