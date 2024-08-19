@@ -2,7 +2,7 @@
 import os
 from flask import render_template, url_for, flash, redirect, request, abort, send_from_directory, jsonify
 from flaskblog import app, db, bcrypt, mail, photos, serial, oauth, videos
-from flaskblog.models import User, Post
+from flaskblog.models import User, Post, Like, Comment
 from flaskblog.form import Registration, LoginForm, PostContent, UpdateAccount, RequestResetForm, ResetPasswordForm
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
@@ -357,3 +357,22 @@ def request_token(token):
         flash('Your password has been updated successfully!', 'success')
         return redirect(url_for('login'))
     return render_template('reset_password.html', title='Reset Password', form=form)
+
+
+@app.route('/post/<int:post_id>/like', methods=['POST'])
+@login_required
+def like_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    like = Like.query.filter_by(user_id=current_user.id, post_id=post.id).first()
+    
+    if like:
+        db.session.delete(like)
+        db.session.commit()
+        flash('You unliked this post', 'success')
+    else:
+        new_like = Like(user_id=current_user.id, post_id=post.id)
+        db.session.add(new_like)
+        db.session.commit()
+        flash('You liked this post', 'success')
+    
+    return redirect(url_for('post', post_id=post_id))

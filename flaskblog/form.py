@@ -87,7 +87,7 @@ class UpdateAccount(FlaskForm):
 class PostContent(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     content = CKEditorField('Content', validators=[DataRequired()])
-    media = FileField('Upload Media', validators=[FileAllowed(allowed_extensions, 'Images and Videos only!')])
+    media = FileField('Upload File', validators=[FileAllowed(allowed_extensions, 'Images and Videos only!')])
     submit = SubmitField('Post')
 
 
